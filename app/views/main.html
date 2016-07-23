@@ -1,0 +1,63 @@
+<style type="text/css">
+#cy {
+    height: 50em;
+    border: 2px solid #888;
+    overflow: hidden !important;
+    border-radius: 0.55em;
+    margin: 1em;
+    color: darkgray;
+    font-weight: 100;
+    float: left;
+    width: 48%;
+}
+
+#editor {
+    height: 58.3345em;
+    border: 2px solid #888;
+    overflow: hidden !important;
+    border-radius: 0.55em;
+    margin: 1.2em;
+    font-weight: 100;
+    float: relative;
+    width: 48%;
+}
+</style>
+<div class="container">
+	<header class="jumbotron subhead" id="overview" >
+    	<div class="row">
+        	<div class="span12">
+            	<h2>Tierless Programming</h2>
+            	<br/>
+				<p class="lead">A visualization tool for tierless programming</p>
+        	</div>
+    	</div>
+	</header>
+
+
+    <!--div class="panel panel-default" class="span12">
+        <div class="panel-body">
+            <button type="button" class="btn btn-default" ng-controller="TestButtonCtrl" ng-click="onTestPush()">Test</button>
+        </div>
+    </div-->
+
+
+	<div class="row">
+		<div id="cy" ng-controller="GraphCtrl"></div>
+        <div id=editor ui-ace="{
+            useWrapMode : true,
+            showGutter: true,
+            theme:'clouds',
+            mode: 'javascript',
+            onLoad: aceLoaded,
+            onChange: aceChanged
+        }" ng-controller="EditorCtrl">
+//@server
+{
+    function add (a, b) {
+        return a + b;
+    }
+}
+        </div>
+	</div>
+
+</div>
