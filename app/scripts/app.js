@@ -69,6 +69,11 @@ angular
                               'segment-distances': '40 40',
                               'segment-weights': '0.25 0.75'*/
                             })
+                        .selector('edge.segementedEdge')
+                            .css({
+                                'curve-style': 'segments',
+                                'segment-distances': '20 40 20'
+                            })
                         .selector(':selected')
                             .css({
                                 'background-color': 'black',
@@ -118,14 +123,45 @@ angular
             console.log(edges);
             cy.add(nodes);
 
-            var controlEdges = edges.filter(function(e) { return e.content.equalsType(EDGES.CONTROL); });
-            cy.add(controlEdges);
+            var controlEdges = edges.filter(function(e) { return e.isType(EDGES.CONTROL); });
+            cy.add(controlEdges).addClass('straightEdge');
+            //cy.edges().addClass('straightEdge');
             var rest = edges.filter(function(e) { return ! e.content.equalsType(EDGES.CONTROL); });
-            var dagreLayout = cy.elements().makeLayout({name:'dagre'});
-            cy.add(rest);
-            var secondLayout = cy.elements().makeLayout({name:'dagre'});//cy.collection(rest).makeLayout({name:'dagre'});
-            dagreLayout.run();
-            return secondLayout.run();
+            //cy.add(rest);
+            //var coll = cy.collection(nodes + rest);
+            //console.log(rest);
+            //coll.add(cy.filter( function(i,e) {return e.group == "nodes"; }));
+            //coll.add(cy.filter( function(i,e) {console.log(e); }));
+            //var secondLayout = coll.makeLayout({name:'dagre'});//cy.elements().makeLayout({name:'dagre'});
+            var controlLayout = cy.elements().makeLayout({name:'dagre'});
+
+            var dataEdges = edges.filter(function(e) {
+                return e.isType(EDGES.DATA) || e.isType(EDGES.REMOTED);
+            });
+            cy.add(dataEdges).addClass('segementedEdge');
+            // dataEdges.forEach(function(e,i) {
+            //     var source = cy.getElementById(e.getSource());
+            //     var target = cy.getElementById(e.getTarget());
+            //
+            //     if(source && target) {
+            //         var sourcePosition = source.position();
+            //         var targetPosition = target.position();
+            //
+            //         console.log(sourcePosition);
+            //     }
+
+            //});
+
+            var callEdges = edges.filter(function(e) {
+                return e.isType(EDGES.CALL) || e.isType(EDGES.REMOTEC);
+            });
+            cy.add(callEdges).addClass('straightEdge');
+
+
+            var restLayout = cy.collection(dataEdges + callEdges).makeLayout({name:'dagre'});
+            controlLayout.run();
+            return restLayout.run();
+            //return secondLayout.run();
             //return cy.ready(function (event) {console.log(event);});
         };
 
@@ -187,7 +223,18 @@ angular
                         source: edge.from.id,
                         target: edge.to.id
                     },
-                    content: edge
+                    content: edge,
+
+                    isType: function(type) {
+                        return this.content.equalsType(type);
+                    },
+
+                    getSource: function() {
+                        return this.data.source;
+                    },
+                    getTarget: function() {
+                        return this.data.target;
+                    }
                 };
             }
         };
