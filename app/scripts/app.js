@@ -50,7 +50,7 @@ angular
                     container: $('#cy')[0],
 
                     style: cytoscape.stylesheet()
-                        .selector('node')
+                        .selector('node.pdg')
                             .css({
                                 'content': 'data(id)',
     							'text-opacity': 0.5,
@@ -58,7 +58,12 @@ angular
     							'text-halign': 'right',
     							'background-color': function(ele) { return ele.data('bg'); }//'#11479e' should be memoized
                             })
-                        .selector('edge')
+                        .selector('node.hidden')
+                            .css({
+                                width:2,
+                                height:2
+                            })
+                        .selector('edge.pdg')
                             .css({
                               'target-arrow-shape': 'triangle',
                               'line-color': function(ele) { return ele.data('c'); },
@@ -73,6 +78,12 @@ angular
                             .css({
                                 'curve-style': 'segments',
                                 'segment-distances': '20 40 20'
+                            })
+                        .selector('edge.dividedEdge')
+                            .css({
+                                'line-color': function(ele) { return ele.data('c'); },
+                                'label': function(ele) { return ele.data('l'); },
+                                'font-size': 12
                             })
                         .selector(':selected')
                             .css({
@@ -119,26 +130,91 @@ angular
             //remove all
             cy.remove(cy.elements());
 
-            console.log(nodes);
-            console.log(edges);
-            cy.add(nodes);
+            cy.add(nodes).addClass('pdg');
 
             var controlEdges = edges.filter(function(e) { return e.isType(EDGES.CONTROL); });
-            cy.add(controlEdges).addClass('straightEdge');
+            cy.add(controlEdges).addClass('pdg');
             //cy.edges().addClass('straightEdge');
-            var rest = edges.filter(function(e) { return ! e.content.equalsType(EDGES.CONTROL); });
+            var rest = edges.filter(function(e) { return ! e.isType(EDGES.CONTROL); });
             //cy.add(rest);
             //var coll = cy.collection(nodes + rest);
             //console.log(rest);
             //coll.add(cy.filter( function(i,e) {return e.group == "nodes"; }));
             //coll.add(cy.filter( function(i,e) {console.log(e); }));
             //var secondLayout = coll.makeLayout({name:'dagre'});//cy.elements().makeLayout({name:'dagre'});
-            var controlLayout = cy.elements().makeLayout({name:'dagre'});
+            var controlLayout = cy.elements().makeLayout({name:'dagre', minLen: function( edge ){ return 2; }});
+
+            controlLayout.run();
 
             var dataEdges = edges.filter(function(e) {
                 return e.isType(EDGES.DATA) || e.isType(EDGES.REMOTED);
             });
-            cy.add(dataEdges).addClass('segementedEdge');
+
+            var updatedDataEdges = [];
+
+            var idx = 0;
+
+            dataEdges.forEach(function(e) {
+                var source = cy.getElementById(e.getSource());
+                var target = cy.getElementById(e.getTarget());
+
+                function createHiddenNode(pos) {
+                    idx ++;
+                    return {
+                        group: "nodes",
+                        data: {
+                            id: "hiddenNode" + idx,
+                            bg: "#11479e"
+                        },
+                        position: pos,
+                        selectable: false,
+                        classes: 'hidden'
+                    };
+                }
+
+                function createDividedEdge(edge, from, to, id, style, type) {
+                    return {
+                        group: "edges",
+                        data: {
+                            id: "de" + id,
+                            c: edge.data.c,
+                            l: type,
+                            source: from,
+                            target: to
+                        },
+                        content: edge,
+                        classes: style
+                    }
+                }
+
+                if(source.position() != undefined && target.position() != undefined) {
+                    var sourcePosition = source.position();
+                    var targetPosition = target.position();
+                    var newY = targetPosition.y - (target.height() * 2);
+                    var newX1 = targetPosition.x;
+                    var newX2 = sourcePosition.x;
+
+                    var position1 = { x:newX1, y:newY };
+                    var position2 = { x:newX2, y:newY };
+
+                    var hiddenNode1 = createHiddenNode(position1);
+                    var hiddenNode2 = createHiddenNode(position2);
+
+                    var edge1 = createDividedEdge(e, e.getSource(), hiddenNode2.data.id, e.data.id + "1", 'dividedEdge', '');
+                    var edge2 = createDividedEdge(e, hiddenNode2.data.id, hiddenNode1.data.id, e.data.id + "2", 'dividedEdge', e.content.type.name);
+                    var edge3 = createDividedEdge(e, hiddenNode1.data.id, e.getTarget(), e.data.id + "3", 'pdg', '');
+
+                    var toAdd = [hiddenNode1, hiddenNode2, edge1, edge2, edge3];
+                    updatedDataEdges = updatedDataEdges.concat(toAdd);
+
+                }
+            });
+
+
+
+            //cy.add(dataEdges).addClass('segementedEdge');
+
+            //var rest = tempRest.filter(function(e) { return dataEdges.indexOf(e) < 0; });
             // dataEdges.forEach(function(e,i) {
             //     var source = cy.getElementById(e.getSource());
             //     var target = cy.getElementById(e.getTarget());
@@ -155,11 +231,13 @@ angular
             var callEdges = edges.filter(function(e) {
                 return e.isType(EDGES.CALL) || e.isType(EDGES.REMOTEC);
             });
-            cy.add(callEdges).addClass('straightEdge');
+            cy.add(callEdges).addClass('pdg');
 
+            console.log(updatedDataEdges);
+            cy.add(updatedDataEdges);
 
-            var restLayout = cy.collection(dataEdges + callEdges).makeLayout({name:'dagre'});
-            controlLayout.run();
+            var restLayout = cy.collection(callEdges + updatedDataEdges).makeLayout({name:'dagre'});
+
             return restLayout.run();
             //return secondLayout.run();
             //return cy.ready(function (event) {console.log(event);});
