@@ -11,7 +11,8 @@
     "angular-sanitize": "^1.4.0",
     "angular-touch": "^1.4.0",
     "ace": "^1.2.3",
-    "angular-ace": "^1.0.0"
+    "angular-ace": "^1.0.0",
+    "angular-ui-ace": "latest"
   },
   "devDependencies": {
     "angular-mocks": "^1.4.0"
