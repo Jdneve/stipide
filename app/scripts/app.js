@@ -85,6 +85,14 @@ angular
                                 'label': function(ele) { return ele.data('l'); },
                                 'font-size': 12
                             })
+                        .selector('edge.selectedEdge')
+                            .css({
+                                'background-color': 'black',
+                                'line-color': 'black',
+                                'target-arrow-color': 'black',
+                                'source-arrow-color': 'black',
+                                'text-outline-color': 'black'
+                            })
                         .selector(':selected')
                             .css({
                                 'background-color': 'black',
@@ -101,8 +109,43 @@ angular
                 });
 
                 cy.on('click', function(e){
-                  var ele = e.cyTarget;
-                  console.log('clicked ' + ele.id());
+                    var ele = e.cyTarget;
+                    function hasHiddenNode(ele) {
+                        var filtered = ele.connectedNodes().filter(function(i, ele) {
+                            return ele.hasClass('hidden');
+                        });
+                        return filtered.size() > 0;
+                    }
+                    //console.log(ele.hasClass('edge.dividedEdge'));
+                    ele.connectedEdges().each(function(i, ele) {
+                        if(hasHiddenNode(ele)) {
+                            var id = ele.id();
+                            var slicedId = id.slice(0,id.length-1);
+                            console.log(id);
+                            console.log(slicedId);
+                            for(var i = 1; i<4; i++) {
+                                cy.getElementById(slicedId + i).flashClass('selectedEdge', 2500);
+                            }
+                        }
+                        ele.flashClass('selectedEdge', 2500);
+                    });
+                        //var currentStyle = ele.style;
+                        //eletoggle
+                        // ele.animate({
+                        //     style: {
+                        //         'background-color': 'black',
+                        //         'line-color': 'black',
+                        //         'target-arrow-color': 'black',
+                        //         'source-arrow-color': 'black',
+                        //         'text-outline-color': 'black'
+                        //     }
+                        // }, {
+                        //     duration: 1000
+                        // });
+                    //});
+                    // setTimeout(function(){
+                    //      ele.connectedEdges().toggleClass('selectedEdge', false);
+                    //  }, 2500);
                 });
             }); // on dom ready
 
