@@ -126,29 +126,27 @@ angular.module('stipideApp')
                         edgeId ++;
                         return cyEdge.create(e, edgeId); });
 
-                console.log($scope.nodes);
-                console.log($scope.edges);
-
                 pdgGraph.addNodesWithEdges($scope.nodes, $scope.edges);
 
             //}
             return true;
         };
     }])
-    .controller('TestButtonCtrl', ['$scope', 'pdgGraph', function($scope, pdgGraph) {
+    .controller('ChooseController', ['$scope', 'pdgGraph', function($scope, pdgGraph) {
 
-        $scope.on = false;
-
-        $scope.onTestPush = function() {
-            if ($scope.on) {
-                pdgGraph.delTestEdge();
-            } else {
-                pdgGraph.addTestEdge();
-            }
-            $scope.on = ! $scope.on;
+        $scope.data = {
+            availableOptions: [
+              {id: '1', name: 'Control Edges Only'},
+              {id: '2', name: 'Control and Data Edges'},
+              {id: '3', name: 'Control, Data and Call Edges'},
+              {id: '4', name: 'Control, Data, Call and Parameter Edges'}
+            ],
+            selectedOption: {id: '4', name: 'Control, Data, Call and Parameter Edges'}
         };
 
-        pdgGraph.onTestPush(function() {
-            $scope.$apply();
-        });
+        $scope.adaptEdgeChoice = function() {
+            pdgGraph.setEdgeOption($scope.data.selectedOption);
+        }
+
+        $scope.adaptEdgeChoice();
     }]);

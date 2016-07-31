@@ -125,6 +125,12 @@ angular
             listeners.push(fn);
         }
 
+        pdgGraph.options = {};
+
+        pdgGraph.setEdgeOption = function(option) {
+            pdgGraph.options.edge = option;
+        }
+
         pdgGraph.addNodes = function(nodes) {
             cy.add(nodes);
             cy.layout({name:'dagre'});
@@ -135,56 +141,61 @@ angular
             //remove all
             cy.remove(cy.elements());
 
+            var optionEdge = pdgGraph.options.edge.id;
+            //option1
             cy.add(nodes).addClass('pdg');
-
             var controlEdges = edges.filter(function(e) { return e.isType(EDGES.CONTROL); });
             cy.add(controlEdges).addClass('pdg');
+            //draw this
+            var controlLayout = cy.elements().makeLayout({name:'dagre', minLen: function( edge ){ return 2; }});
+            controlLayout.run();
+
             //cy.edges().addClass('straightEdge');
-            var rest = edges.filter(function(e) { return ! e.isType(EDGES.CONTROL); });
+            //var rest = edges.filter(function(e) { return ! e.isType(EDGES.CONTROL); });
             //cy.add(rest);
             //var coll = cy.collection(nodes + rest);
             //console.log(rest);
             //coll.add(cy.filter( function(i,e) {return e.group == "nodes"; }));
             //coll.add(cy.filter( function(i,e) {console.log(e); }));
             //var secondLayout = coll.makeLayout({name:'dagre'});//cy.elements().makeLayout({name:'dagre'});
-            var controlLayout = cy.elements().makeLayout({name:'dagre', minLen: function( edge ){ return 2; }});
 
-            controlLayout.run();
-
-            var dataEdges = edges.filter(function(e) {
-                return e.isType(EDGES.DATA) || e.isType(EDGES.REMOTED);
-            });
-
-            var callEdges = edges.filter(function(e) {
-                return e.isType(EDGES.CALL) || e.isType(EDGES.REMOTEC);
-            });
-
-            var parameterEdges = edges.filter(function(e) {
-                return e.isType(EDGES.PARIN) || e.isType(EDGES.PAROUT)
-                    || e.isType(EDGES.REMOTEPARIN) || e.isType(EDGES.REMOTEPAROUT);
-            });
-
-            console.log(parameterEdges);
-
+            //option2
             var updatedDataEdges = [];
-            var idx = 0;
-            dataEdges.forEach(function(e) {
-                var source = cy.getElementById(e.getSource());
-                var target = cy.getElementById(e.getTarget());
-                idx++;
-                var toAdd = e.divideDataEdge(e, idx, source, target);
-                idx++;
-                updatedDataEdges = updatedDataEdges.concat(toAdd);
-            });
+            var callEdges = [];
             var updatedParameterEdges = [];
-            parameterEdges.forEach(function(e) {
-                var source = cy.getElementById(e.getSource());
-                var target = cy.getElementById(e.getTarget());
-                idx ++;
-                var toAdd = e.divideParameterEdge(e, idx, source, target);
-                idx ++;
-                updatedParameterEdges = updatedParameterEdges.concat(toAdd);
-            });
+            var idx = 0;
+            if(optionEdge >= 2) {
+                var dataEdges = edges.filter(function(e) {
+                    return e.isType(EDGES.DATA) || e.isType(EDGES.REMOTED);
+                });
+                dataEdges.forEach(function(e) {
+                    var source = cy.getElementById(e.getSource());
+                    var target = cy.getElementById(e.getTarget());
+                    idx++;
+                    var toAdd = e.divideDataEdge(e, idx, source, target);
+                    idx++;
+                    updatedDataEdges = updatedDataEdges.concat(toAdd);
+                });
+            }
+            if(optionEdge >= 3) {
+                callEdges = edges.filter(function(e) {
+                    return e.isType(EDGES.CALL) || e.isType(EDGES.REMOTEC);
+                });
+            }
+            if(optionEdge >= 4) {
+                var parameterEdges = edges.filter(function(e) {
+                    return e.isType(EDGES.PARIN) || e.isType(EDGES.PAROUT)
+                        || e.isType(EDGES.REMOTEPARIN) || e.isType(EDGES.REMOTEPAROUT);
+                });
+                parameterEdges.forEach(function(e) {
+                    var source = cy.getElementById(e.getSource());
+                    var target = cy.getElementById(e.getTarget());
+                    idx ++;
+                    var toAdd = e.divideParameterEdge(e, idx, source, target);
+                    idx ++;
+                    updatedParameterEdges = updatedParameterEdges.concat(toAdd);
+                });
+            }
 
             cy.add(callEdges).addClass('pdg');
             cy.add(updatedParameterEdges);

@@ -34,11 +34,20 @@
 	</header>
 
 
-    <!--div class="panel panel-default" class="span12">
+    <div class="panel panel-default" class="span12">
         <div class="panel-body">
-            <button type="button" class="btn btn-default" ng-controller="TestButtonCtrl" ng-click="onTestPush()">Test</button>
+            <div ng-controller="ChooseController">
+                <form name="chooseEdges">
+                    <label for="edgeSelect"> Select level </label>
+                    <select name="edgeSelect" id="edgeSelect"
+                            ng-options="option.name for option in data.availableOptions track by option.id"
+                            ng-model="data.selectedOption"
+                            ng-change="adaptEdgeChoice()">
+                    </select>
+                </form>
+            </div>
         </div>
-    </div-->
+    </div>
 
 
 	<div class="row">
@@ -53,9 +62,15 @@
         }" ng-controller="EditorCtrl">
 //@server
 {
+    var i = 1;
     function add (a, b) {
         return a + b;
     }
+}
+//@client
+{
+    var j = 3;
+    add(i,j);
 }
         </div>
 	</div>
