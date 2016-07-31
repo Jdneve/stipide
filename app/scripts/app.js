@@ -60,8 +60,8 @@ angular
                             })
                         .selector('node.hidden')
                             .css({
-                                width:5,
-                                height:5
+                                width:8,
+                                height:8
                             })
                         .selector('edge.pdg')
                             .css({
@@ -176,12 +176,21 @@ angular
                 idx++;
                 updatedDataEdges = updatedDataEdges.concat(toAdd);
             });
+            var updatedParameterEdges = [];
+            parameterEdges.forEach(function(e) {
+                var source = cy.getElementById(e.getSource());
+                var target = cy.getElementById(e.getTarget());
+                idx ++;
+                var toAdd = e.divideParameterEdge(e, idx, source, target);
+                idx ++;
+                updatedParameterEdges = updatedParameterEdges.concat(toAdd);
+            });
 
             cy.add(callEdges).addClass('pdg');
-            cy.add(parameterEdges).addClass('pdg');
+            cy.add(updatedParameterEdges);
             cy.add(updatedDataEdges);
 
-            var restLayout = cy.collection(callEdges + updatedDataEdges + parameterEdges).makeLayout({name:'dagre'});
+            var restLayout = cy.collection(callEdges + updatedDataEdges + updatedParameterEdges).makeLayout({name:'dagre'});
 
             return restLayout.run();
             //return secondLayout.run();
@@ -230,7 +239,7 @@ angular
             if(source.position() != undefined && target.position() != undefined) {
                 var sourcePosition = source.position();
                 var targetPosition = target.position();
-                var newY = calculateY(targetPosition.y, (target.height() * 2));
+                var newY = calculateY(targetPosition.y, target.height());
                 var newX1 = targetPosition.x;
                 var newX2 = sourcePosition.x;
 
@@ -288,7 +297,13 @@ angular
                     divideDataEdge: function(e, idx, source, target) {
                         return divideEdge(e, idx, source, target,
                             function calculateY(a,b) {
-                                return a - b;
+                                return a - (b * 2);
+                        });
+                    },
+                    divideParameterEdge: function(e, idx, source, target) {
+                        return divideEdge(e, idx, source, target,
+                            function calculateY(a,b) {
+                                return a + b;
                         });
                     }
                 };
