@@ -36,13 +36,23 @@
 
     <div class="panel panel-default" class="span12">
         <div class="panel-body">
-            <div ng-controller="ChooseController">
+            <div ng-controller="ChooseEdgeController">
                 <form name="chooseEdges">
                     <label for="edgeSelect"> Select level </label>
                     <select name="edgeSelect" id="edgeSelect"
-                            ng-options="option.name for option in data.availableOptions track by option.id"
-                            ng-model="data.selectedOption"
+                            ng-options="option.name for option in data.availableEdges track by option.id"
+                            ng-model="data.selectedEdge"
                             ng-change="adaptEdgeChoice()">
+                    </select>
+                </form>
+            </div>
+            <div ng-controller="ChooseLayoutController">
+                <form name="chooseLayout">
+                    <label for="layoutSelect"> Select layout </label>
+                    <select name="layoutSelect" id="layoutSelect"
+                            ng-options="option.name for option in data.availableLayouts track by option.id"
+                            ng-model="data.selectedLayout"
+                            ng-change="adaptLayoutChoice()">
                     </select>
                 </form>
             </div>

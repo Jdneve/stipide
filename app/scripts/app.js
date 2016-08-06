@@ -116,36 +116,28 @@ angular
                         });
                         return filtered.size() > 0;
                     }
-                    //console.log(ele.hasClass('edge.dividedEdge'));
-                    ele.connectedEdges().each(function(i, ele) {
-                        if(hasHiddenNode(ele)) {
-                            var id = ele.id();
-                            var slicedId = id.slice(0,id.length-1);
-                            console.log(id);
-                            console.log(slicedId);
-                            for(var i = 1; i<4; i++) {
-                                cy.getElementById(slicedId + i).flashClass('selectedEdge', 2500);
-                            }
+                    function highlight(ele) {
+                        var id = ele.id();
+                        var slicedId = id.slice(0,id.length-1);
+                        for(var i = 1; i<4; i++) {
+                            cy.getElementById(slicedId + i).flashClass('selectedEdge', 2500);
                         }
+                    }
+                    if(ele.isNode()) {
+                        ele.connectedEdges().each(function(i, ele) {
+                            if(hasHiddenNode(ele)) {
+                                highlight(ele);
+                            }
+                            ele.flashClass('selectedEdge', 2500);
+                        });
+                    } else if(ele.isEdge()) {
+                        ele.connectedNodes().each(function(i, node) {
+                            if(node.hasClass('hidden')) {
+                                highlight(ele);
+                            }
+                        });
                         ele.flashClass('selectedEdge', 2500);
-                    });
-                        //var currentStyle = ele.style;
-                        //eletoggle
-                        // ele.animate({
-                        //     style: {
-                        //         'background-color': 'black',
-                        //         'line-color': 'black',
-                        //         'target-arrow-color': 'black',
-                        //         'source-arrow-color': 'black',
-                        //         'text-outline-color': 'black'
-                        //     }
-                        // }, {
-                        //     duration: 1000
-                        // });
-                    //});
-                    // setTimeout(function(){
-                    //      ele.connectedEdges().toggleClass('selectedEdge', false);
-                    //  }, 2500);
+                    }
                 });
             }); // on dom ready
 
@@ -174,6 +166,10 @@ angular
             pdgGraph.options.edge = option;
         }
 
+        pdgGraph.setLayoutOption = function(option) {
+            pdgGraph.options.layout = option;
+        }
+
         pdgGraph.addNodes = function(nodes) {
             cy.add(nodes);
             cy.layout({name:'dagre'});
@@ -185,68 +181,82 @@ angular
             cy.remove(cy.elements());
 
             var optionEdge = pdgGraph.options.edge.id;
-            //option1
-            cy.add(nodes).addClass('pdg');
+            var optionLayout = pdgGraph.options.layout.id;
             var controlEdges = edges.filter(function(e) { return e.isType(EDGES.CONTROL); });
-            cy.add(controlEdges).addClass('pdg');
-            //draw this
-            var controlLayout = cy.elements().makeLayout({name:'dagre', minLen: function( edge ){ return 2; }});
-            controlLayout.run();
+            var dataEdges = edges.filter(function(e) {
+                return e.isType(EDGES.DATA) || e.isType(EDGES.REMOTED);
+            });
+            var callEdges = edges.filter(function(e) {
+                return e.isType(EDGES.CALL) || e.isType(EDGES.REMOTEC);
+            });
+            var parameterEdges = edges.filter(function(e) {
+                return e.isType(EDGES.PARIN) || e.isType(EDGES.PAROUT)
+                    || e.isType(EDGES.REMOTEPARIN) || e.isType(EDGES.REMOTEPAROUT);
+            });
 
-            //cy.edges().addClass('straightEdge');
-            //var rest = edges.filter(function(e) { return ! e.isType(EDGES.CONTROL); });
-            //cy.add(rest);
-            //var coll = cy.collection(nodes + rest);
-            //console.log(rest);
-            //coll.add(cy.filter( function(i,e) {return e.group == "nodes"; }));
-            //coll.add(cy.filter( function(i,e) {console.log(e); }));
-            //var secondLayout = coll.makeLayout({name:'dagre'});//cy.elements().makeLayout({name:'dagre'});
 
-            //option2
-            var updatedDataEdges = [];
-            var callEdges = [];
-            var updatedParameterEdges = [];
-            var idx = 0;
-            if(optionEdge >= 2) {
-                var dataEdges = edges.filter(function(e) {
-                    return e.isType(EDGES.DATA) || e.isType(EDGES.REMOTED);
-                });
-                dataEdges.forEach(function(e) {
-                    var source = cy.getElementById(e.getSource());
-                    var target = cy.getElementById(e.getTarget());
-                    idx++;
-                    var toAdd = e.divideDataEdge(e, idx, source, target);
-                    idx++;
-                    updatedDataEdges = updatedDataEdges.concat(toAdd);
-                });
+            if(optionLayout == 1) {
+                cy.add(nodes).addClass('pdg');
+                cy.add(controlEdges).addClass('pdg');
+
+                if(optionEdge >= 2) {
+                    cy.add(dataEdges).addClass('pdg');
+                }
+                if(optionEdge >= 3) {
+                    cy.add(callEdges).addClass('pdg');
+                }
+                if(optionEdge >= 4) {
+                    cy.add(parameterEdges).addClass('pdg');
+                }
+
+                var layout = cy.elements().makeLayout({name:'dagre'});
+
+                return layout.run();
             }
-            if(optionEdge >= 3) {
-                callEdges = edges.filter(function(e) {
-                    return e.isType(EDGES.CALL) || e.isType(EDGES.REMOTEC);
-                });
+            if(optionLayout == 2) {
+                cy.add(nodes).addClass('pdg');
+                cy.add(controlEdges).addClass('pdg');
+                //draw this
+                var controlLayout = cy.elements().makeLayout({name:'dagre', minLen: function( edge ){ return 2; }});
+                controlLayout.run();
+
+                var updatedDataEdges = [];
+                var updatedCallEdges = [];
+                var updatedParameterEdges = [];
+
+                var idx = 0;
+                if(optionEdge >= 2) {
+                    dataEdges.forEach(function(e) {
+                        var source = cy.getElementById(e.getSource());
+                        var target = cy.getElementById(e.getTarget());
+                        idx++;
+                        var toAdd = e.divideDataEdge(e, idx, source, target);
+                        idx++;
+                        updatedDataEdges = updatedDataEdges.concat(toAdd);
+                    });
+                }
+                if(optionEdge >= 3) {
+                    updatedCallEdges = callEdges;
+                }
+                if(optionEdge >= 4) {
+                    parameterEdges.forEach(function(e) {
+                        var source = cy.getElementById(e.getSource());
+                        var target = cy.getElementById(e.getTarget());
+                        idx ++;
+                        var toAdd = e.divideParameterEdge(e, idx, source, target);
+                        idx ++;
+                        updatedParameterEdges = updatedParameterEdges.concat(toAdd);
+                    });
+                }
+
+                cy.add(updatedCallEdges).addClass('pdg');
+                cy.add(updatedParameterEdges);
+                cy.add(updatedDataEdges);
+
+                var restLayout = cy.collection(updatedCallEdges + updatedDataEdges + updatedParameterEdges).makeLayout({name:'dagre'});
+
+                return restLayout.run();
             }
-            if(optionEdge >= 4) {
-                var parameterEdges = edges.filter(function(e) {
-                    return e.isType(EDGES.PARIN) || e.isType(EDGES.PAROUT)
-                        || e.isType(EDGES.REMOTEPARIN) || e.isType(EDGES.REMOTEPAROUT);
-                });
-                parameterEdges.forEach(function(e) {
-                    var source = cy.getElementById(e.getSource());
-                    var target = cy.getElementById(e.getTarget());
-                    idx ++;
-                    var toAdd = e.divideParameterEdge(e, idx, source, target);
-                    idx ++;
-                    updatedParameterEdges = updatedParameterEdges.concat(toAdd);
-                });
-            }
-
-            cy.add(callEdges).addClass('pdg');
-            cy.add(updatedParameterEdges);
-            cy.add(updatedDataEdges);
-
-            var restLayout = cy.collection(callEdges + updatedDataEdges + updatedParameterEdges).makeLayout({name:'dagre'});
-
-            return restLayout.run();
             //return secondLayout.run();
             //return cy.ready(function (event) {console.log(event);});
         };

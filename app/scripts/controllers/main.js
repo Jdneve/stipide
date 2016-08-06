@@ -12,41 +12,9 @@ angular.module('stipideApp')
     .controller('GraphCtrl', [ '$scope', 'pdgGraph', function($scope, pdgGraph){
         var cy;
 
-        $scope.nodes = [
-        /*    { data: { id: 'n0' } },
-            { data: { id: 'n1' } },
-            { data: { id: 'n2' } },
-            { data: { id: 'n3' } },
-            { data: { id: 'n4' } },
-            { data: { id: 'n5' } },
-            { data: { id: 'n6' } },
-            { data: { id: 'n7' } },
-            { data: { id: 'n8' } },
-            { data: { id: 'n9' } },
-            { data: { id: 'n10' } },
-            { data: { id: 'n11' } },
-            { data: { id: 'n12' } },
-            { data: { id: 'n13' } },
-            { data: { id: 'n14' } },
-            { data: { id: 'n15' } },
-            { data: { id: 'n16' } } */
-        ];
+        $scope.nodes = [];
 
-        $scope.edges = [
-        /*    { data: { source: 'n0', target: 'n1' } },
-            { data: { source: 'n1', target: 'n2' } },
-            { data: { source: 'n1', target: 'n3' } },
-            { data: { source: 'n4', target: 'n5' } },
-            { data: { source: 'n4', target: 'n6' } },
-            { data: { source: 'n6', target: 'n7' } },
-            { data: { source: 'n6', target: 'n8' } },
-            { data: { source: 'n8', target: 'n9' } },
-            { data: { source: 'n8', target: 'n10' } },
-            { data: { source: 'n11', target: 'n12' } },
-            { data: { source: 'n12', target: 'n13' } },
-            { data: { source: 'n13', target: 'n14' } },
-            { data: { source: 'n13', target: 'n15' } }, */
-        ];
+        $scope.edges = [];
 
         pdgGraph($scope.nodes, $scope.edges).then(function(pdgCy){
             cy = pdgCy;
@@ -91,25 +59,6 @@ angular.module('stipideApp')
 
                 var cytoscapeGraph = createPDGGraph(graphs.PDG, assumes);
 
-                // var create_cy_node = function (node) {
-                //     return { group: "nodes",
-                //             data: {id: node.id},
-                //             content: node };
-                // };
-
-
-                // var create_cy_edge = function (edge) {
-                //     var edge_obj = {group: "edges",
-                //                     data: {
-                //                         id: "e" + edgeId,
-                //                         source: edge.from.id,
-                //                         target: edge.to.id
-                //                     },
-                //                     content:edge};
-                //     edgeId++;
-                //     return edge_obj;
-                // }
-
                 var ids = [];
                 var edgeId = 0;
 
@@ -132,21 +81,37 @@ angular.module('stipideApp')
             return true;
         };
     }])
-    .controller('ChooseController', ['$scope', 'pdgGraph', function($scope, pdgGraph) {
+    .controller('ChooseEdgeController', ['$scope', 'pdgGraph', function($scope, pdgGraph) {
 
-        $scope.data = {
-            availableOptions: [
-              {id: '1', name: 'Control Edges Only'},
-              {id: '2', name: 'Control and Data Edges'},
-              {id: '3', name: 'Control, Data and Call Edges'},
-              {id: '4', name: 'Control, Data, Call and Parameter Edges'}
-            ],
-            selectedOption: {id: '4', name: 'Control, Data, Call and Parameter Edges'}
-        };
+        $scope.data = {};
+
+        $scope.data.availableEdges = [
+            {id: '1', name: 'Control Edges Only'},
+            {id: '2', name: 'Control and Data Edges'},
+            {id: '3', name: 'Control, Data and Call Edges'},
+            {id: '4', name: 'Control, Data, Call and Parameter Edges'}
+        ];
+        $scope.data.selectedEdge = {id: '4', name: 'Control, Data, Call and Parameter Edges'};
 
         $scope.adaptEdgeChoice = function() {
-            pdgGraph.setEdgeOption($scope.data.selectedOption);
+            pdgGraph.setEdgeOption($scope.data.selectedEdge);
         }
 
         $scope.adaptEdgeChoice();
+    }])
+    .controller('ChooseLayoutController', ['$scope', 'pdgGraph', function($scope, pdgGraph) {
+
+        $scope.data = {};
+
+        $scope.data.availableLayouts = [
+            {id: '1', name: 'Directed Acyclic Graph'},
+            {id: '2', name: 'Dagre using Krinke for cross- & backedges'}
+        ];
+        $scope.data.selectedLayout = {id:'2', name: 'Dagre using Krinke for cross- & backedges'};
+
+        $scope.adaptLayoutChoice = function() {
+            pdgGraph.setLayoutOption($scope.data.selectedLayout);
+        }
+
+        $scope.adaptLayoutChoice();
     }]);
