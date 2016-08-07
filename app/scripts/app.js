@@ -34,7 +34,7 @@ angular
                 redirectTo: '/'
             });
         })
-    .factory('pdgGraph', [ '$q', function( $q ){
+    .factory('pdgGraph', [ '$q', 'collapsible', function( $q, collapsible ){
         var cy;
         var pdgGraph = function(n, e){
             var deferred = $q.defer();
@@ -63,13 +63,29 @@ angular
                                 width:8,
                                 height:8
                             })
+                        .selector('node.collapsed')
+                            .css({
+                                opacity: 0
+                            })
+                        .selector('$node > node')
+                            .css({
+                                'padding-top': '10px',
+                                'padding-left': '10px',
+                                'padding-bottom': '10px',
+                                'padding-right': '10px',
+                                'text-valign': 'top',
+                                'text-halign': 'center',
+                                'background-color': '#bbb',
+                                'content': 'data(id)'
+                            })
                         .selector('edge.pdg')
                             .css({
                               'target-arrow-shape': 'triangle',
                               'line-color': function(ele) { return ele.data('c'); },
                               'target-arrow-color': function(ele) { return ele.data('c'); },
                               'label': function(ele) { return ele.data('l'); },
-                              'font-size': 12
+                              'font-size': 12,
+                              'z-index' : 3
                               /*'curve-style': 'segments',
                               'segment-distances': '40 40',
                               'segment-weights': '0.25 0.75'*/
@@ -91,7 +107,12 @@ angular
                                 'line-color': 'black',
                                 'target-arrow-color': 'black',
                                 'source-arrow-color': 'black',
-                                'text-outline-color': 'black'
+                                'text-outline-color': 'black',
+                                'z-index' : 4
+                            })
+                        .selector('edge.collapsed')
+                            .css({
+                                opacity: 0
                             })
                         .selector(':selected')
                             .css({
@@ -120,16 +141,17 @@ angular
                         var id = ele.id();
                         var slicedId = id.slice(0,id.length-1);
                         for(var i = 1; i<4; i++) {
-                            cy.getElementById(slicedId + i).flashClass('selectedEdge', 2500);
+                            var cyElm = cy.getElementById(slicedId + i);
+                            cyElm.flashClass('selectedEdge', 2500);
+                            cyElm.select();
                         }
                     }
                     if(ele.isNode()) {
-                        ele.connectedEdges().each(function(i, ele) {
-                            if(hasHiddenNode(ele)) {
-                                highlight(ele);
-                            }
-                            ele.flashClass('selectedEdge', 2500);
-                        });
+                        if(ele.isExpandable()) {
+                            ele.expand({fisheye: false, animate:false, cueEnabled:false});
+                        } else {
+                            ele.collapse({fisheye: false, animate:false, cueEnabled:false});
+                        }
                     } else if(ele.isEdge()) {
                         ele.connectedNodes().each(function(i, node) {
                             if(node.hasClass('hidden')) {
@@ -160,6 +182,12 @@ angular
             listeners.push(fn);
         }
 
+        pdgGraph.initNodes = [
+            {data: {id:'serverParent'}},
+            {data: {id:'clientParent'}},
+            {data: {id:'sharedParent'}}
+        ];
+
         pdgGraph.options = {};
 
         pdgGraph.setEdgeOption = function(option) {
@@ -168,6 +196,14 @@ angular
 
         pdgGraph.setLayoutOption = function(option) {
             pdgGraph.options.layout = option;
+        }
+
+        pdgGraph.rememberPositions = function(positions) {
+            pdgGraph.options.positions = positions;
+        }
+
+        pdgGraph.retrievePositions = function() {
+            return pdgGraph.options.positions;
         }
 
         pdgGraph.addNodes = function(nodes) {
@@ -179,6 +215,8 @@ angular
         pdgGraph.addNodesWithEdges = function(nodes, edges) {
             //remove all
             cy.remove(cy.elements());
+
+            //cy.add(pdgGraph.initNodes);
 
             var optionEdge = pdgGraph.options.edge.id;
             var optionLayout = pdgGraph.options.layout.id;
@@ -193,7 +231,6 @@ angular
                 return e.isType(EDGES.PARIN) || e.isType(EDGES.PAROUT)
                     || e.isType(EDGES.REMOTEPARIN) || e.isType(EDGES.REMOTEPAROUT);
             });
-
 
             if(optionLayout == 1) {
                 cy.add(nodes).addClass('pdg');
@@ -213,8 +250,24 @@ angular
 
                 return layout.run();
             }
-            if(optionLayout == 2) {
-                cy.add(nodes).addClass('pdg');
+            if(optionLayout >= 2) {
+
+                var updatedNodes = nodes;
+
+                if(optionLayout == 3) {
+                    var colData = collapsible.create(nodes);
+                    var colMap = colData.colMap;
+                    cy.add(colData.toAdd);
+                    updatedNodes = nodes.map(function(n) {
+                        var colObj = colMap.find(n.content.id);
+                        if(colObj) {
+                            n.data.parent = colObj.par;
+                        }
+                        return n;
+                    });
+                }
+
+                cy.add(updatedNodes).addClass('pdg');
                 cy.add(controlEdges).addClass('pdg');
                 //draw this
                 var controlLayout = cy.elements().makeLayout({name:'dagre', minLen: function( edge ){ return 2; }});
@@ -255,6 +308,14 @@ angular
 
                 var restLayout = cy.collection(updatedCallEdges + updatedDataEdges + updatedParameterEdges).makeLayout({name:'dagre'});
 
+                cy.nodes().on("beforeCollapse", function() {
+                    pdgGraph.rememberPositions(cy.nodes().positions());
+                });
+
+                cy.nodes().on("afterExpand", function() {
+                    cy.nodes().positions(pdgGraph.retrievePositions());
+                });
+
                 return restLayout.run();
             }
             //return secondLayout.run();
@@ -272,8 +333,13 @@ angular
 
         return {
             create: function(node) {
-                if(node.isServerNode()) { color = blue; }
-                else if(node.isClientNode()) { color = red; };
+                if(node.isServerNode()) {
+                    color = blue;
+                    //par = 'serverParent';
+                } else if(node.isClientNode()) {
+                    color = red;
+                    //par = 'clientParent';
+                };
 
                 return {
                     group: "nodes",
@@ -310,9 +376,12 @@ angular
                 var position1 = { x:newX1, y:newY };
                 var position2 = { x:newX2, y:newY };
 
-                var hiddenNode1 = cyHiddenNode.create(position1, idx);
+                var targetParent = target.parent().id();
+                var sourceParent = source.parent().id();
+
+                var hiddenNode1 = cyHiddenNode.create(position1, idx, targetParent);
                 idx ++;
-                var hiddenNode2 = cyHiddenNode.create(position2, idx);
+                var hiddenNode2 = cyHiddenNode.create(position2, idx, sourceParent);
 
                 var edge1 = cyDividedEdge.create(e, e.getSource(), hiddenNode2.data.id, e.data.id + "1", 'dividedEdge', '');
                 var edge2 = cyDividedEdge.create(e, hiddenNode2.data.id, hiddenNode1.data.id, e.data.id + "2", 'dividedEdge', e.content.type.name);
@@ -376,11 +445,12 @@ angular
     }])
     .factory('cyHiddenNode', function() {
         return {
-            create: function(pos, idx) {
+            create: function(pos, idx, par) {
                 return {
                     group: "nodes",
                     data: {
                         id: "hiddenNode" + idx,
+                        parent: par,
                         bg: "#11479e"
                     },
                     position: pos,
@@ -405,6 +475,64 @@ angular
                     content: edge,
                     classes: style
                 };
+            }
+        };
+    })
+    .factory('collapsible', ['collapsibleMap', function(collapsibleMap) {
+        function addToCollapsible(node, parent, colMap) {
+            node.getOutNodes(EDGES.CONTROL).forEach(function(dependentNode) {
+                var depId = dependentNode.id;
+                colMap.add({id:depId, par:parent});
+                addToCollapsible(dependentNode, parent, colMap);
+            });
+        }
+        return {
+            create: function(nodes) {
+                var colMap = collapsibleMap.create();
+                var collapsiblePdgNodes = [];
+                nodes.forEach(function(n) {
+                    var pdgNode = n.content;
+                    if (pdgNode instanceof EntryNode) {
+                        var newId = 'coll' + n.data.id;
+                        //var newParent = n.data.parent;
+                        //console.log(newParent);
+                        n.data.parent = newId;
+                        addToCollapsible(pdgNode, newId, colMap);
+                        var newParent = colMap.find(n.data.id);
+                        var newParentId = undefined;
+                        if(newParent) {
+                            newParentId = newParent.par;
+                        }
+                        console.log(newParentId);
+                        collapsiblePdgNodes.push({data: {id:newId, parent:newParentId}});
+                    }
+                });
+                return {colMap: colMap, toAdd:collapsiblePdgNodes};
+            }
+        }
+    }])
+    .factory('collapsibleMap', function() {
+        return {
+            create: function() {
+                return {
+                    currentMap: [],
+
+                    add: function(colObj) {
+                        var idx = this.currentMap.findIndex(function(val) {
+                            return colObj.id == val.id
+                        });
+                        if(idx > -1) {
+                            this.currentMap[idx] = colObj;
+                        } else {
+                            this.currentMap.push(colObj);
+                        }
+                    },
+                    find: function(id) {
+                        return this.currentMap.find(function(val) {
+                            return val.id == id;
+                        });
+                    }
+                }
             }
         };
     });

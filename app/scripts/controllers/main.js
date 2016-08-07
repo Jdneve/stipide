@@ -105,9 +105,10 @@ angular.module('stipideApp')
 
         $scope.data.availableLayouts = [
             {id: '1', name: 'Directed Acyclic Graph'},
-            {id: '2', name: 'Dagre using Krinke for cross- & backedges'}
+            {id: '2', name: 'Dagre using Krinke for cross- & backedges'},
+            {id: '3', name: 'Dagre, Krinke and simplified Balmas'}
         ];
-        $scope.data.selectedLayout = {id:'2', name: 'Dagre using Krinke for cross- & backedges'};
+        $scope.data.selectedLayout = {id: '3', name: 'Dagre, Krinke and simplified Balmas'};
 
         $scope.adaptLayoutChoice = function() {
             pdgGraph.setLayoutOption($scope.data.selectedLayout);
