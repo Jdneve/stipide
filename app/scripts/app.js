@@ -289,7 +289,14 @@ angular
                     });
                 }
                 if(optionEdge >= 3) {
-                    updatedCallEdges = callEdges;
+                    callEdges.forEach(function(e) {
+                        var source = cy.getElementById(e.getSource());
+                        var target = cy.getElementById(e.getTarget());
+                        idx ++;
+                        var toAdd = e.divideCallEdge(e, idx, source, target);
+                        idx ++;
+                        updatedCallEdges = updatedCallEdges.concat(toAdd);
+                    });
                 }
                 if(optionEdge >= 4) {
                     parameterEdges.forEach(function(e) {
@@ -302,7 +309,7 @@ angular
                     });
                 }
 
-                cy.add(updatedCallEdges).addClass('pdg');
+                cy.add(updatedCallEdges);
                 cy.add(updatedParameterEdges);
                 cy.add(updatedDataEdges);
 
@@ -438,6 +445,12 @@ angular
                             function calculateY(a,b) {
                                 return a + b;
                         });
+                    },
+                    divideCallEdge: function(e, idx, source, target) {
+                        return divideEdge(e, idx, source, target,
+                            function calculateY(a,b) {
+                                return a + b;
+                            })
                     }
                 };
             }
