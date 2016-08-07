@@ -75,8 +75,7 @@ angular
                                 'padding-right': '10px',
                                 'text-valign': 'top',
                                 'text-halign': 'center',
-                                'background-color': '#bbb',
-                                'content': 'data(id)'
+                                'background-color': '#bbb'
                             })
                         .selector('edge.pdg')
                             .css({
@@ -505,7 +504,7 @@ angular
                 var collapsiblePdgNodes = [];
                 nodes.forEach(function(n) {
                     var pdgNode = n.content;
-                    if (pdgNode instanceof EntryNode) {
+                    if (pdgNode instanceof CallNode || pdgNode instanceof EntryNode) {
                         var newId = 'coll' + n.data.id;
                         //var newParent = n.data.parent;
                         //console.log(newParent);
